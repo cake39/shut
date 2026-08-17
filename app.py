@@ -8,13 +8,30 @@ import gspread
 from google.oauth2.service_account import Credentials
 
 # --- 页面配置与极简 UI 样式注入 ---
-st.set_page_config(page_title="Study!--by micoco", layout="centered")
+st.set_page_config(page_title="😅", layout="centered")
+# st.markdown("""
+# <style>
+#     /* 隐藏顶部默认菜单和底部水印 */
+#     #MainMenu {visibility: hidden;}
+#     footer {visibility: hidden;}
+#     header {visibility: hidden;}
+#     /* 优化单选框的间距 */
+#     .stRadio > div {gap: 0.5rem;}
+#     /* 弱化分割线 */
+#     hr {margin-top: 1rem; margin-bottom: 1rem; border-top: 1px solid #f0f2f6;}
+# </style>
+# """, unsafe_allow_html=True)
 st.markdown("""
 <style>
-    /* 隐藏顶部默认菜单和底部水印 */
+    /* 隐藏右上角默认菜单，但保留整个 header 以显示手机端侧边栏按钮 */
     #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    
+    /* 强制隐藏底部 Streamlit 水印和广告 */
+    footer {display: none !important;}
+    
+    /* 隐藏右上角的 Deploy 按钮 (如果有) */
+    .stAppDeployButton {display: none;}
+    
     /* 优化单选框的间距 */
     .stRadio > div {gap: 0.5rem;}
     /* 弱化分割线 */
@@ -116,7 +133,7 @@ if 'username' not in st.session_state:
     st.session_state.username = None
 
 if not st.session_state.username:
-    st.subheader("Study!--by micoco")
+    st.subheader("😅")
     with st.form("login"):
         user_input = st.text_input("姓名")
         if st.form_submit_button("登录系统"):
