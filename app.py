@@ -67,7 +67,9 @@ def init_gsheets():
         
         # 优先尝试从 Streamlit 环境变量中读取密钥（用于云端部署）
         if "GOOGLE_CREDS" in st.secrets:
-            creds_dict = json.loads(st.secrets["GOOGLE_CREDS"])
+            # creds_dict = json.loads(st.secrets["GOOGLE_CREDS"])
+            # 将 json.loads 替换为 dict
+            creds_dict = dict(st.secrets["GOOGLE_CREDS"])
             creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
         # 如果没有环境变量，则从本地文件读取（用于本地测试）
         else:
