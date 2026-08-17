@@ -129,7 +129,7 @@ def save_user_mistakes(username, mistakes_set):
 
 # --- 身份认证 ---
 # 👇 在这里填入你们 6 个人的真实姓名或工号
-ALLOWED_USERS = ["micoco", "向欣怡", "牟正鑫", "吕昊霖", "李佳龙", "李小翔"] 
+ALLOWED_USERS = ["micoco", "向欣怡", "牟正鑫", "吕昊霖", "李佳龙", "李小翔", "杨雄"] 
 
 if 'username' not in st.session_state:
     st.session_state.username = None
