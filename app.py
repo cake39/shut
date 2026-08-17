@@ -41,10 +41,10 @@ st.markdown("""
 
 # --- 网络代理与云数据库配置 ---
 proxy_url = "http://127.0.0.1:7890"
-os.environ["http_proxy"] = proxy_url
-os.environ["https_proxy"] = proxy_url
-os.environ["HTTP_PROXY"] = proxy_url
-os.environ["HTTPS_PROXY"] = proxy_url
+# os.environ["http_proxy"] = proxy_url
+# os.environ["https_proxy"] = proxy_url
+# os.environ["HTTP_PROXY"] = proxy_url
+# os.environ["HTTPS_PROXY"] = proxy_url
 
 SPREADSHEET_NAME = "abc-error"
 CREDENTIALS_FILE = "google_credentials.json"
