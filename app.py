@@ -236,7 +236,7 @@ if mode == "练习模式":
             selected = [chr(65+i) for i, o in enumerate(opts) if st.checkbox(f"{chr(65+i)}. {o}", key=f"{st.session_state.qk}_{i}")]
             user_a = "".join(selected)
 
-        if st.button("提交", type="primary"):
+        if st.button("提交", type="primary", use_container_width=True):
             if not user_a: st.warning("请选择答案")
             else:
                 st.session_state.user_a = user_a
@@ -270,7 +270,7 @@ if mode == "练习模式":
             
         if pd.notna(q['解析']) and q['解析'] != '无': st.info(f"解析: {q['解析']}")
 
-        if st.button("下一题", type="primary"):
+        if st.button("下一题", type="primary", use_container_width=True):
             pick_q(p_type)
             st.rerun()
 
