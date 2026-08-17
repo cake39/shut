@@ -58,11 +58,22 @@ proxy_url = "http://127.0.0.1:7890"
 SPREADSHEET_NAME = "abc-error"
 CREDENTIALS_FILE = "google_credentials.json"
 
+
 # @st.cache_resource
 # def init_gsheets():
 #     try:
 #         scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-#         creds = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=scopes)
+        
+#         # 优先尝试从 Streamlit 环境变量中读取密钥（用于云端部署）
+#         if "GOOGLE_CREDS" in st.secrets:
+#             # creds_dict = json.loads(st.secrets["GOOGLE_CREDS"])
+#             # 将 json.loads 替换为 dict
+#             creds_dict = dict(st.secrets["GOOGLE_CREDS"])
+#             creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+#         # 如果没有环境变量，则从本地文件读取（用于本地测试）
+#         else:
+#             creds = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=scopes)
+            
 #         client = gspread.authorize(creds)
 #         return client.open(SPREADSHEET_NAME).worksheet('Mistakes')
 #     except Exception as e:
@@ -73,24 +84,28 @@ CREDENTIALS_FILE = "google_credentials.json"
 def init_gsheets():
     try:
         scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-        
-        # 优先尝试从 Streamlit 环境变量中读取密钥（用于云端部署）
         if "GOOGLE_CREDS" in st.secrets:
-            # creds_dict = json.loads(st.secrets["GOOGLE_CREDS"])
-            # 将 json.loads 替换为 dict
             creds_dict = dict(st.secrets["GOOGLE_CREDS"])
             creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
-        # 如果没有环境变量，则从本地文件读取（用于本地测试）
         else:
             creds = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=scopes)
             
         client = gspread.authorize(creds)
-        return client.open(SPREADSHEET_NAME).worksheet('Mistakes')
+        # 核心修改：返回整个 Spreadsheet 对象，而不是具体的 Worksheet
+        return client.open(SPREADSHEET_NAME) 
     except Exception as e:
         st.error(f"系统连接异常: {e}")
         return None
 
-sheet = init_gsheets()
+spreadsheet = init_gsheets()
+try:
+    sheet = spreadsheet.worksheet('Mistakes') if spreadsheet else None
+    corrects_sheet = spreadsheet.worksheet('Corrects') if spreadsheet else None
+except Exception:
+    st.error("未找到对应的工作表，请确认表格中已创建 'Mistakes' 和 'Corrects'。")
+    sheet, corrects_sheet = None, None
+
+# sheet = init_gsheets()
 
 # --- 严谨的序列化存取逻辑 (使用题干 MD5 和 JSON) ---
 def load_user_mistakes(username):
@@ -118,6 +133,32 @@ def save_user_mistakes(username, mistakes_set):
             sheet.update_cell(row_idx, 2, mistakes_str)
         else:
             sheet.append_row([username, mistakes_str])
+
+def load_user_corrects(username):
+    if corrects_sheet:
+        records = corrects_sheet.get_all_records()
+        for row in records:
+            if str(row.get('Username')) == username:
+                raw_data = str(row.get('CorrectsList', '[]'))
+                try:
+                    return set(json.loads(raw_data))
+                except json.JSONDecodeError:
+                    return set()
+    return set()
+
+def save_user_corrects(username, corrects_set):
+    if corrects_sheet:
+        corrects_str = json.dumps(list(corrects_set))
+        records = corrects_sheet.get_all_records()
+        row_idx = None
+        for i, row in enumerate(records):
+            if str(row.get('Username')) == username:
+                row_idx = i + 2
+                break
+        if row_idx:
+            corrects_sheet.update_cell(row_idx, 2, corrects_str)
+        else:
+            corrects_sheet.append_row([username, corrects_str])
 
 # # --- 身份认证 ---
 # if 'username' not in st.session_state:
@@ -154,6 +195,8 @@ if not st.session_state.username:
             elif input_name in ALLOWED_USERS:
                 st.session_state.username = input_name
                 st.session_state.mistakes = load_user_mistakes(st.session_state.username)
+                # 👇 新增：登录成功时加载正确记录
+                st.session_state.corrects = load_user_corrects(st.session_state.username)
                 st.rerun()
             else:
                 st.error("未授权的用户，请联系管理员")
@@ -161,15 +204,11 @@ if not st.session_state.username:
 
 if 'mistakes' not in st.session_state:
     st.session_state.mistakes = load_user_mistakes(st.session_state.username)
+# 👇 新增：确保会话中始终有正确的集合
+if 'corrects' not in st.session_state:
+    st.session_state.corrects = load_user_corrects(st.session_state.username)
 # -----------------------------
 
-# --- 侧边栏导航 ---
-st.sidebar.markdown(f"**用户:** {st.session_state.username}")
-if st.sidebar.button("退出", use_container_width=True):
-    st.session_state.username = None
-    st.rerun()
-st.sidebar.divider()
-mode = st.sidebar.radio("系统功能", ["练习模式", "模拟考试", "错题本"], label_visibility="collapsed")
 
 # --- 题库加载与 MD5 唯一标识生成 ---
 @st.cache_data
@@ -192,6 +231,17 @@ def load_data():
 
 df = load_data()
 if df.empty: st.stop()
+
+# --- 侧边栏导航 ---
+st.sidebar.markdown(f"**👤 用户:** {st.session_state.username}")
+# 👇 新增：侧边栏战绩统计
+st.sidebar.markdown(f" {len(st.session_state.corrects)} / {len(df)}")
+
+if st.sidebar.button("退出", use_container_width=True):
+    st.session_state.username = None
+    st.rerun()
+st.sidebar.divider()
+mode = st.sidebar.radio("系统功能", ["练习模式", "模拟考试", "错题本"], label_visibility="collapsed")
 
 # --- 辅助函数 ---
 def handle_mistake(q_id, action="add"):
@@ -264,6 +314,12 @@ if mode == "练习模式":
 
         if is_right:
             st.success("回答正确")
+            
+            # 👇 新增：获取题目的行号（整数），并保存到已掌握列表中
+            q_idx = df.index.tolist().index(q.name)
+            if q_idx not in st.session_state.corrects:
+                st.session_state.corrects.add(q_idx)
+                save_user_corrects(st.session_state.username, st.session_state.corrects)
         else:
             st.error(f"标准答案: {r_ans}")
             handle_mistake(q.name, "add")
@@ -273,6 +329,7 @@ if mode == "练习模式":
         if st.button("下一题", type="primary", use_container_width=True):
             pick_q(p_type)
             st.rerun()
+    
 
 elif mode == "模拟考试":
     st.subheader("模拟考试")
