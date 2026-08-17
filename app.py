@@ -9,33 +9,42 @@ from google.oauth2.service_account import Credentials
 
 # --- 页面配置与极简 UI 样式注入 ---
 st.set_page_config(page_title="😅", layout="centered")
-# st.markdown("""
-# <style>
-#     /* 隐藏顶部默认菜单和底部水印 */
-#     #MainMenu {visibility: hidden;}
-#     footer {visibility: hidden;}
-#     header {visibility: hidden;}
-#     /* 优化单选框的间距 */
-#     .stRadio > div {gap: 0.5rem;}
-#     /* 弱化分割线 */
-#     hr {margin-top: 1rem; margin-bottom: 1rem; border-top: 1px solid #f0f2f6;}
-# </style>
-# """, unsafe_allow_html=True)
+
 st.markdown("""
 <style>
-    /* 隐藏右上角默认菜单，但保留整个 header 以显示手机端侧边栏按钮 */
+    /* 隐藏右上角默认菜单，保留手机端侧边栏展开空间 */
     #MainMenu {visibility: hidden;}
-    
     /* 强制隐藏底部 Streamlit 水印和广告 */
     footer {display: none !important;}
-    
-    /* 隐藏右上角的 Deploy 按钮 (如果有) */
+    /* 隐藏右上角的 Deploy 按钮 */
     .stAppDeployButton {display: none;}
     
-    /* 优化单选框的间距 */
-    .stRadio > div {gap: 0.5rem;}
-    /* 弱化分割线 */
+    /* 优化单选框的间距，让选项稍微拉开一点，防误触 */
+    .stRadio > div {gap: 0.8rem;}
     hr {margin-top: 1rem; margin-bottom: 1rem; border-top: 1px solid #f0f2f6;}
+    
+    /* 👇 核心美化：胶囊椭圆形、农行绿渐变、立体悬浮感按钮 */
+    div[data-testid="stButton"] button, 
+    div[data-testid="stFormSubmitButton"] button {
+        width: 100% !important; /* 纯 CSS 强制撑满手机屏幕宽度 */
+        height: 3.2rem !important;
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        color: white !important;
+        /* 清爽的微渐变绿色背景 */
+        background: linear-gradient(135deg, #00A65A 0%, #008d4c 100%) !important; 
+        border: none !important;
+        border-radius: 50px !important; /* 完美的椭圆胶囊形状 */
+        box-shadow: 0 4px 12px rgba(0, 166, 90, 0.3) !important; /* 底部发光阴影 */
+        transition: all 0.2s ease !important; /* 丝滑的动画过渡 */
+    }
+
+    /* 按钮按下时的点击物理反馈 */
+    div[data-testid="stButton"] button:active, 
+    div[data-testid="stFormSubmitButton"] button:active {
+        transform: scale(0.97) !important; /* 按下时稍微往回缩，模拟真实按键 */
+        box-shadow: 0 2px 5px rgba(0, 166, 90, 0.4) !important; /* 阴影变小，模拟贴近屏幕 */
+    }
 </style>
 """, unsafe_allow_html=True)
 
